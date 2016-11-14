@@ -2,50 +2,57 @@
 AGENT: individual attributes
 """
 
+
 class FemaleState:
     juvenile, cycling, pregnant, nursing0, nursing1 = range(5)
+
 
 class MaleState:
     juvsol, sol, fol, lea = range(4)
 
+
 class AgentClass:
-    #  defines an agent.py of any species
-    index = 0
+    def __init__(self, sex, mother):
+        #  defines an agent.py of any species
+        self.index = 0
 
-    age = 0.0
-    sex = ""
+        self.age = 0.0
+        self.sex = ""
 
-    femaleState = None
-    last_birth = 0
+        self.femaleState = None
+        self.last_birth = 0
 
-    lottery = []
-    compability = None
+        self.lottery = []
+        self.compability = None
 
-    parents = []
-    offspring = []
+        self.parents = []
+        self.offspring = []
 
-    dispersed = False
+        self.dispersed = False
 
-    taxon = ""
-
-    def make_new_agent(self, mother):
+        self.taxon = ""
 
 class HamadryasAgent(AgentClass):
     #  defines the attributes that a hamadryas baboon must have
-    taxon = "hamadryas"
+    def __init__(self, taxon, clanID, bandID, OMU, maleState, females, malefols, femaleState):
+        self.taxon = "hamadryas"
 
-    clanID = ""
-    bandID = ""
-    OMU = ""
-    maleState = None
-    females = []
-    malefols = []
+        self.clanID = ""
+        self.bandID = ""
+        self.OMU = ""
+        self.maleState = None
+        self.females = []
+        self.malefols = []
+        self.femaleState = None
 
 class SavannahAgent(AgentClass):
     #  defines attributes that a generic (savannah) baboon must have
-    taxon = "savannah"
+    def __init__(self, troopID, rhp, alphatenure=None):
+        self.taxon = "savannah"
+        self.troopID = troopID
+        self.rhp = rhp
+        self.alphatenure = alphatenure
 
-    troopID = ""
 
 class GeladaAgent(AgentClass):
     #  defines the attributes that a gelada must have
@@ -55,4 +62,3 @@ class GeladaAgent(AgentClass):
     maleState = None
     females = []
     malefols = []
-

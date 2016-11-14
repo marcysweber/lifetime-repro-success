@@ -8,9 +8,10 @@ from agent import AgentClass, FemaleState
 
 
 class Reproduction:
-
     def chance_of_preg(self, age):
-        #  chance of preg is a function of age using lifetable
+        pass
+
+    # chance of preg is a function of age using lifetable
 
 
     def get_pregnant(self, this_agent, current_pop_dict):
@@ -21,9 +22,7 @@ class Reproduction:
         assert this_agent.femaleState == FemaleState.cycling
 
         if self.chance_of_preg(this_agent.age):
-
-
-
+            pass
     def give_birth(self, mother, current_pop_dict):
         assert mother.femaleState == FemaleState.pregnant
         #  AS OFFSPRING ARE BORN, MAKE SURE THEY ARE ADDED
@@ -48,3 +47,4 @@ class Death:
                 self.die(offspring, current_pop_dict)
 
     def die(self, this_agent, current_pop_dict):
+        pass
