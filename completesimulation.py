@@ -66,6 +66,10 @@ class SavannahSim(Simulation):
     def run_simulation(self):
         population = Population()
 
+        #  loop here for seed group/population
+        for groupindex in range(0, 9):
+
+
         for halfyear in range(0, 400, 1):
             self.mortality_check(population)
 
