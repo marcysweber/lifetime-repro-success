@@ -1,5 +1,5 @@
 import aging
-
+from seedgroups import SavannahSeed
 
 def main():
     hamadryas = HamadryasSim()
@@ -12,11 +12,13 @@ def main():
 
 
 class Population:
-    all = []
-    dict = {}
-    #    females = dict.sex = 'f'
-    #    males = dict.sex = 'm'
-    groupsdict = {}
+    def __init__(self):
+        self.all = []
+        self.dict = {}
+        #    females = dict.sex = 'f'
+        #    males = dict.sex = 'm'
+        self.groupsdict = {}
+        self.topeverindex = 0
 
 
 class Simulation:
@@ -67,8 +69,8 @@ class SavannahSim(Simulation):
         population = Population()
 
         #  loop here for seed group/population
-        for groupindex in range(0, 9):
-
+        for groupindex in range(0, 10):
+            population = SavannahSeed.makeseed(groupindex, population)
 
         for halfyear in range(0, 400, 1):
             self.mortality_check(population)
@@ -89,4 +91,10 @@ class SavannahSim(Simulation):
             agents_in_group = [population.dict[idx] for idx in population.groupsdict[group]]
             sorted_by_rhp = sorted(agents_in_group, key=lambda agent: agent.rhp, reverse=True)
             dominanace_hierarchy = [agent.index for agent in sorted_by_rhp]
+
+            if population.dict[dominanace_hierarchy[0]].alphatenure:
+                population.dict[dominanace_hierarchy[0]].alphatenure += 0.5
+            else:
+                population.dict[dominanace_hierarchy[0]].alphatenure = 0.5
+
             return dominanace_hierarchy
