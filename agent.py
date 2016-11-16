@@ -4,7 +4,7 @@ AGENT: individual attributes
 
 
 class FemaleState:
-    juvenile, cycling, pregnant, nursing0, nursing1 = range(5)
+    juvnile, cycling, pregnant, nursing0, nursing1 = range(5)
 
 
 class MaleState:
@@ -12,6 +12,13 @@ class MaleState:
 
 
 class SavannahRhp:
+    rhp = {
+        "1": {10.0: 34},
+        "2": {},
+        "3": {},
+        "4": {},
+        "5": {}
+    }
     type1 = []
     type2 = []
     type3 = []
