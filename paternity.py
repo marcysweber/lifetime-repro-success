@@ -13,7 +13,7 @@ class SavannahPaternity:
         sire = None
 
         n = float(len(dominance_hierarchy))
-        at = population.dict[dominance_hierarchy[0]].alphatenure
+        at = population.dict[dominance_hierarchy[0]].alpha_tenure
         m = (n - at) / (n + at)
         if m < 0.1:
             m = 0.1

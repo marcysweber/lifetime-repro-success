@@ -1,5 +1,9 @@
+import random
+
 import aging
+import lifetables
 from seedgroups import SavannahSeed
+
 
 def main():
     hamadryas = HamadryasSim()
@@ -25,8 +29,14 @@ class Simulation:
     #  to hold generic functions pertaining to any/most sims.
 
     def mortality_check(self, population):
-        for agent in population:
-            pass
+        ret = 0
+        for agentindex in list(population.all):
+            agent = population.dict[agentindex]
+            getdeathchance = lifetables.getdeathchance(agent)
+            dieroll = random.uniform(0, 1)
+            if getdeathchance >= dieroll:
+                ret += self.killagent(agent, population, population.groupsdict[agent.troopID])
+        return ret
 
     def birth_check(self, population):
         for agent in population:
@@ -36,7 +46,13 @@ class Simulation:
         for agent in population:
             aging.Promote.promote_agent(agent)
 
-
+    def killagent(self, agent, population, group):
+        del population.dict[agent.index]
+        population.all.remove(agent.index)
+        group.agents.remove(agent.index)
+        assert agent.index not in population.all
+        return 1
+        #  also add here specialized lists!!!
 """
 TAXA SPECIFIC CLASSES BELOW
 are designed to hold schedules.
@@ -92,9 +108,9 @@ class SavannahSim(Simulation):
             sorted_by_rhp = sorted(agents_in_group, key=lambda agent: agent.rhp, reverse=True)
             dominanace_hierarchy = [agent.index for agent in sorted_by_rhp]
 
-            if population.dict[dominanace_hierarchy[0]].alphatenure:
-                population.dict[dominanace_hierarchy[0]].alphatenure += 0.5
+            if population.dict[dominanace_hierarchy[0]].alpha_tenure:
+                population.dict[dominanace_hierarchy[0]].alpha_tenure += 0.5
             else:
-                population.dict[dominanace_hierarchy[0]].alphatenure = 0.5
+                population.dict[dominanace_hierarchy[0]].alpha_tenure = 0.5
 
             return dominanace_hierarchy
