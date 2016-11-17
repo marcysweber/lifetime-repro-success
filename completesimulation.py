@@ -2,7 +2,8 @@ import random
 
 import aging
 import lifetables
-from agent import SavannahAgent, HamadryasAgent, FemaleState, MaleState, MakeAgents
+from agent import FemaleState, MakeAgents
+from dispersal import SavannahDispersal
 from paternity import HamadryasPaternity, SavannahPaternity
 from seedgroups import SavannahSeed
 
@@ -30,14 +31,17 @@ class Population:
 class Simulation:
     #  to hold generic functions pertaining to any/most sims.
 
-    def mortality_check(self, population):
+    def __init__(self):
+        self.siring_success = []
+
+    def mortality_check(self, population, halfyear):
         ret = 0
         for agentindex in list(population.all):
             agent = population.dict[agentindex]
             getdeathchance = lifetables.getdeathchance(agent)
             dieroll = random.uniform(0, 1)
             if getdeathchance >= dieroll:
-                ret += self.killagent(agent, population, population.groupsdict[agent.troopID])
+                ret += self.killagent(agent, population, population.groupsdict[agent.troopID], halfyear)
         return ret
 
     def birth_check(self, population, halfyear):
@@ -48,18 +52,30 @@ class Simulation:
                     birthchance = lifetables.getbirthchance(agent)
                     dieroll = random.uniform(0, 1)
                     if birthchance >= dieroll:
-                        self.birthagent(agent, population, halfyear)
+                        agent.femaleState = FemaleState.pregnant
+                elif agent.femaleState == FemaleState.pregnant:
+                    self.birthagent(agent, population, halfyear)
+                    agent.femaleState = FemaleState.nursing0
 
 
     def promotions(self, population):
-        for agent in population:
-            aging.Promote.promote_agent(agent)
+        for agent in population.dict.keys():
+            agent = population.dict[agent]
+            aging.promote_agent(agent)
 
-    def killagent(self, agent, population, group):
+    def killagent(self, agent, population, group, halfyear):
         del population.dict[agent.index]
         population.all.remove(agent.index)
         group.agents.remove(agent.index)
         assert agent.index not in population.all
+
+        if agent.offspring:
+            if population.dict[agent.offspring[-1]].age < 2:
+                self.killagent(population.dict[agent.offspring[-1]], population, group, halfyear)
+
+        if halfyear > 40:
+            self.siring_success.append(len(agent.offspring))
+
         return 1
 
     def birthagent(self, mother, population, halfyear):
@@ -67,9 +83,10 @@ class Simulation:
 
         if mother.taxon == "hamadryas":
             group = mother.bandID
+            sire = HamadryasPaternity.hamadryassire(mother, population, halfyear)
 
             infant = MakeAgents.makenewhamadryas(group, sex, mother.index,
-                                                 HamadryasPaternity.hamadryassire(mother, population, halfyear),
+                                                 sire,
                                                  population)
             infant.OMU = mother.OMU
             infant.clanID = mother.clanID
@@ -77,10 +94,17 @@ class Simulation:
         elif mother.taxon == "savannah":
             group = mother.troopID
             dom_hier = population.groupsdict[group].dominance_hierarchy
+            sire = SavannahPaternity.savannahsire(dom_hier, population, halfyear)
 
             infant = MakeAgents.makenewsavannah(group, sex, mother.index,
-                                                SavannahPaternity.savannahsire(dom_hier, population, halfyear),
+                                                sire,
                                                 population)
+
+        mother.offspring.append(infant.index)
+        mother.last_birth = halfyear
+        population.dict[sire].offspring.append(infant.index)
+        population.dict[sire].last_birth = halfyear
+
 
         population.all.append(infant.index)
         population.dict[infant.index] = infant
@@ -124,9 +148,9 @@ class SavannahSim(Simulation):
             population = SavannahSeed.makeseed(groupindex, population)
 
         for halfyear in range(0, 400, 1):
-            self.mortality_check(population)
+            self.mortality_check(population, halfyear)
 
-            self.dispersal_check(population)
+            self.dispersal_check(population, halfyear)
 
             for group in population.groupsdict.keys():
                 group = population.groupsdict[group]
@@ -136,8 +160,15 @@ class SavannahSim(Simulation):
 
             self.promotions(population)
 
-    def dispersal_check(self, population):
-        pass
+    def dispersal_check(self, population, halfyear):
+        random.shuffle(population.all)
+        for agent in population.all:
+            agent = population.dict[agent]
+            if agent.sex == 'm' and agent.age > 7:
+                if agent.last_birth > halfyear - 2:
+                    if population.groupsdict[agent.troopID].get_excess_females(population) < 1:
+                        if random.uniform(0, 1) <= 0.5:
+                            SavannahDispersal.disperse(agent, population)
 
     def dominance_calc(self, population, group):
 
@@ -149,18 +180,19 @@ class SavannahSim(Simulation):
                 if agent.dispersed:
                     adult_males.append(agent)
 
-        sorted_by_rhp = sorted(adult_males, key=lambda agent: agent.get_rhp(), reverse=True)
-        dominance_hierarchy = [agent.index for agent in sorted_by_rhp]
+        group.sorted_by_rhp = sorted(adult_males, key=lambda agent: agent.get_rhp(), reverse=True)
+        dominance_hierarchy = [agent.index for agent in group.sorted_by_rhp]
 
-        print sorted_by_rhp
-
-        print sorted_by_rhp[0]
-
-        alpha = sorted_by_rhp[0]
-        tenure = alpha.alpha_tenure
-        if tenure is not None:
-            sorted_by_rhp[0].alpha_tenure += 0.5
-        else:
-            sorted_by_rhp[0].alpha_tenure = 0.5
+        #  print group.sorted_by_rhp
+        #  print dominance_hierarchy[0]
 
         group.dominance_hierarchy = dominance_hierarchy
+
+        #  print group.sorted_by_rhp[0]
+
+        alpha = population.dict[group.dominance_hierarchy[0]]
+        tenure = alpha.alpha_tenure
+        if tenure is not None:
+            alpha.alpha_tenure += 0.5
+        else:
+            alpha.alpha_tenure = 0.5

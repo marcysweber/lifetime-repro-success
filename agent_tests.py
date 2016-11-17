@@ -4,7 +4,6 @@ import agent
 import lifetables
 from completesimulation import SavannahSim, Population
 from group import SavannahGroup
-from paternity import SavannahPaternity
 from seedgroups import SavannahSeed
 
 
@@ -119,7 +118,7 @@ class LifeTableTests(unittest.TestCase):
         for agent in fakepop.all:
             fakepop.dict[agent].taxon = "savannah"
 
-        deathcounter = fakesim.mortality_check(fakepop)
+        deathcounter = fakesim.mortality_check(fakepop, 0)
 
         print "death count: " + str(deathcounter)
 
@@ -144,6 +143,10 @@ class LifeTableTests(unittest.TestCase):
         fakesim.dominance_calc(fakepop, group)
 
         fakesim.birth_check(fakepop, 50)
+
+        fakesim.promotions(fakepop)
+
+        fakesim.birth_check(fakesim, 51)
 
         self.assertAlmostEqual(fakepop.all, 2200, delta=100)
 

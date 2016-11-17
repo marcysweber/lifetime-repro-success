@@ -1,7 +1,9 @@
 import unittest
 
+from agent import FemaleState
 from completesimulation import SavannahSim, Population, HamadryasSim
-from group import SavannahGroup, HamadryasGroup
+from dispersal import SavannahDispersal
+from group import SavannahGroup
 from seedgroups import SavannahSeed, HamadryasSeed
 
 
@@ -49,3 +51,70 @@ class DominanceTests(unittest.TestCase):
         fakesim.dominance_calc(dompop, fakegroup)
 
         self.assertEqual(fakegroup.dominance_hierarchy, [2, 3, 5, 4, 1])
+
+
+class DispersalTests(unittest.TestCase):
+    def test_move_one_agent(self):
+        disp_sim = SavannahSim()
+        disp_pop = Population()
+        disp_group_1 = SavannahGroup(1)
+        disp_group_2 = SavannahGroup(2)
+
+        for i in range(0, 10):
+            SavannahSeed.addagenttoseed(1, disp_group_1, disp_pop, 'f', None, None, 10)
+        for fem in disp_group_1.agents:
+            fem = disp_pop.dict[fem]
+            fem.femaleState = FemaleState.cycling
+
+        for i in range(0, 10):
+            SavannahSeed.addagenttoseed(2, disp_group_2, disp_pop, 'f', None, None, 10)
+        for fem in disp_group_2.agents:
+            fem = disp_pop.dict[fem]
+            fem.femaleState = FemaleState.cycling
+
+        SavannahSeed.addagenttoseed(1, disp_group_1, disp_pop, 'm', None, None, 10)
+
+        disp_pop.groupsdict = {1: disp_group_1, 2: disp_group_2}
+
+        SavannahDispersal.disperse(disp_pop.dict[21], disp_pop)
+
+        self.assertNotIn(21, disp_group_1.agents)
+
+    def test_dispersal_dest_proportion(self):
+
+        total_dispersals_to_1 = 0
+
+        for i in range(0, 1000):
+            disp_sim = SavannahSim()
+            disp_pop = Population()
+            disp_group_1 = SavannahGroup(1)
+            disp_group_2 = SavannahGroup(2)
+            disp_group_3 = SavannahGroup(3)
+
+            disp_pop.groupsdict = {1: disp_group_1, 2: disp_group_2, 3: disp_group_3}
+
+            for group in disp_pop.groupsdict.keys():
+                for i in range(0, 10):
+                    SavannahSeed.addagenttoseed(group,
+                                                disp_pop.groupsdict[group],
+                                                disp_pop, 'f', None, None, 10)
+                for i in range(0, 5):
+                    SavannahSeed.addagenttoseed(group,
+                                                disp_pop.groupsdict[group],
+                                                disp_pop, 'm', None, None, 10)
+                if group == 1:
+                    for i in range(0, 10):
+                        agentindex = disp_pop.groupsdict[1].agents[i]
+                        agent = disp_pop.dict[agentindex]
+                        agent.femaleState = FemaleState.cycling
+                if group == 2:
+                    for i in range(0, 5):
+                        agentindex = disp_pop.groupsdict[1].agents[i]
+                        agent = disp_pop.dict[agentindex]
+                        agent.femaleState = FemaleState.cycling
+
+            SavannahDispersal.disperse(disp_pop.dict[27], disp_pop)
+
+            total_dispersals_to_1 += len(disp_group_1.agents) - 15
+
+        self.assertAlmostEqual(total_dispersals_to_1, 666, delta=60)
