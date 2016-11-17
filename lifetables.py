@@ -18,6 +18,17 @@ def getdeathchance(agent):
     return deathchance
 
 
+def getbirthchance(agent):
+    birthchance = 0.0
+
+    if agent.taxon == "savannah":
+        birthchance = SavannahLifeTable.birth_chance[agent.age]
+    if agent.taxon == "hamadryas":
+        birthchance = HamadryasLifeTable.birth_chance[agent.age]
+
+    return birthchance
+
+
 class SavannahLifeTable:
     male_death_chance = {
         0: 0,

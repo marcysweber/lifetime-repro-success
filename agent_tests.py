@@ -17,12 +17,12 @@ class AgentTests(unittest.TestCase):
 
     def test_rhp_dom_calc(self):
         agentone = agent.SavannahAgent('m', None, None, troopID=0)
-        agentone.rhp = 10
+        agentone.rhp = "5"
         agenttwo = agent.SavannahAgent('m', None, None, troopID=0)
-        agenttwo.rhp = 30
+        agenttwo.rhp = "1"
         agenttwo.alpha_tenure = 0.5
         agentthree = agent.SavannahAgent('m', None, None, troopID=0)
-        agentthree.rhp = 20
+        agentthree.rhp = "3"
 
         agentone.index = 1
         agenttwo.index = 2
@@ -36,27 +36,34 @@ class AgentTests(unittest.TestCase):
         agenttwo.dispersed = True
         agentthree.dispersed = True
 
+        agentone.age = 8
+        agenttwo.age = 8
+        agentthree.age = 8
+
         fakesim = SavannahSim()
         fakepopulation = Population()
         fakepopulation.dict = {new_agent.index: new_agent for new_agent in [agentone,
                                                                             agenttwo,
                                                                             agentthree]}
 
-        fakepopulation.groupsdict = {1: [1, 2, 3]}
+        group = SavannahGroup(1)
+        group.agents = [1, 2, 3]
+        fakepopulation.groupsdict[1] = group
+        fakesim.dominance_calc(fakepopulation, group)
 
-        self.assertEquals(fakesim.dominance_calc(fakepopulation),
+        self.assertEquals(group.dominance_hierarchy,
                           [2, 3, 1])
 
 
 class PaternityTests(unittest.TestCase):
     def test_sav_paternity(self):
         agentone = agent.SavannahAgent('m', None, None, troopID=0)
-        agentone.rhp = 10
+        agentone.rhp = "5"
         agenttwo = agent.SavannahAgent('m', None, None, troopID=0)
-        agenttwo.rhp = 30
+        agenttwo.rhp = "1"
         agenttwo.alpha_tenure = 0.5
         agentthree = agent.SavannahAgent('m', None, None, troopID=0)
-        agentthree.rhp = 20
+        agentthree.rhp = "3"
 
         agentone.index = 1
         agenttwo.index = 2
@@ -70,19 +77,24 @@ class PaternityTests(unittest.TestCase):
         agenttwo.dispersed = True
         agentthree.dispersed = True
 
+        agentone.age = 8
+        agenttwo.age = 8
+        agentthree.age = 8
+
         fakesim = SavannahSim()
         fakepopulation = Population()
         fakepopulation.dict = {new_agent.index: new_agent for new_agent in [agentone,
                                                                             agenttwo,
                                                                             agentthree]}
-
-        fakepopulation.groupsdict = {1: [1, 2, 3]}
+        group = SavannahGroup(1)
+        group.agents = [1, 2, 3]
+        fakepopulation.groupsdict[1] = group
 
         whosthedaddy = []
-        for i in range(1000):
-            whosthedaddy.append(SavannahPaternity.savannahsire(None,
-                                                               fakesim.dominance_calc(fakepopulation),
-                                                               fakepopulation))
+        # for i in range(1000):
+        #     whosthedaddy.append(SavannahPaternity.savannahsire(None,
+        #                                                        fakesim.dominance_calc(fakepopulation, group),
+        #                                                        fakepopulation))
 
             #  self.assertIs(Counter(whosthedaddy), 0)
 
@@ -113,3 +125,57 @@ class LifeTableTests(unittest.TestCase):
 
         #  self.assertAlmostEqual(deathcounter, 250)
         self.assertAlmostEqual(len(fakepop.all), 750, delta=75)
+
+    def test_birth_stuff(self):
+        fakesim = SavannahSim()
+        fakepop = Population()
+        group = SavannahGroup(0)
+
+        for i in range(0, 1200):
+            SavannahSeed.addagenttoseed(0, group, fakepop, 'f', None, None, 5.0)
+
+        SavannahSeed.addagenttoseed(0, group, fakepop, 'm', None, None, 9)
+        SavannahSeed.addagenttoseed(0, group, fakepop, 'm', None, None, 18)
+        fakepop.groupsdict[0] = group
+
+        fakepop.dict[1201].rhp = "1"
+        fakepop.dict[1202].rhp = "5"
+
+        fakesim.dominance_calc(fakepop, group)
+
+        fakesim.birth_check(fakepop, 50)
+
+        self.assertAlmostEqual(fakepop.all, 2200, delta=100)
+
+        sired1201 = 0
+        females = 0
+
+        for agentindex in fakepop.all:
+            agent = fakepop.dict[agentindex]
+
+            if agent.parents:
+                if agent.parents[1] == 1201:
+                    sired1201 += 1
+            if agent.sex == 'f':
+                females += 1
+
+        self.assertAlmostEqual(sired1201, 625, delta=50)
+        self.assertAlmostEqual(females, 1700, delta=100)
+
+
+class RhpTests(unittest.TestCase):
+    def checkrhpvalues(self):
+        tagent1 = agent.SavannahAgent('m', None, None, None)
+        tagent1.age = 20
+        tagent1.rhp = "1"
+        self.assertEqual(16, tagent1.get_rhp())
+
+        tagent2 = agent.SavannahAgent('m', None, None, None)
+        tagent2.age = 11.5
+        tagent2.rhp = "5"
+        self.assertEqual(23.9, tagent2.get_rhp())
+
+        tagent3 = agent.HamadryasAgent('m', None, None, None)
+        tagent3.age = 13
+        tagent3.rhp = "2"
+        self.assertEqual(40, tagent3.get_rhp())

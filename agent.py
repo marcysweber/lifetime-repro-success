@@ -76,7 +76,6 @@ class AgentClass(object):
         self.last_birth = 0
 
         self.lottery = []
-        self.compability = None
 
         self.parents = [mother, sire]
         self.offspring = []
