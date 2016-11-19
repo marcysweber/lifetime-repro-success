@@ -2,7 +2,7 @@ import random
 
 import aging
 import lifetables
-from agent import FemaleState, MakeAgents
+from agent import MakeAgents, MaleState, FemaleState
 from dispersal import SavannahDispersal, HamadryasDispersal
 from paternity import HamadryasPaternity, SavannahPaternity
 from seedgroups import SavannahSeed, HamadryasSeed
@@ -32,12 +32,12 @@ class HamaPopulation(Population):
         self.avail_females = []
         self.eligible_males = []
         self.young_natal_females = []
-        super(HamaPopulation, self).__init__(all, dict, groupsdict, topeverindex, halfyear)
+        super(HamaPopulation, self).__init__()
 
 
 class SavPopulation(Population):
     def __init__(self):
-        super(SavPopulation, self).__init__(all, dict, groupsdict, topeverindex, halfyear)
+        super(SavPopulation, self).__init__()
 
 class Simulation:
     #  to hold generic functions pertaining to any/most sims.
@@ -75,32 +75,31 @@ class Simulation:
             aging.promote_agent(agent)
 
     def killagent(self, agent, population, group, halfyear):
-        del population.dict[agent.index]
-        population.all.remove(agent.index)
-        group.agents.remove(agent.index)
-        assert agent.index not in population.all
-
         if agent.sex == 'f':
             if agent.offspring:
                 if population.dict[agent.offspring[-1]].age < 2:
                     self.killagent(population.dict[agent.offspring[-1]], population, group, halfyear)
-
         if agent.females:  # if he is a hamadryas leader male
             if agent.malefols:  # malefols inherit first
                 HamadryasDispersal.inherit_females(agent, population)
             # after inheritance, females are "up for grabs"
             population.avail_females.append(agent.females)
-
         if agent.taxon == "hamadryas" and agent.sex == 'f':
             if agent.dispersed:
                 population.dict[agent.OMUID].females.remove(agent.index)
 
+            if agent.index in population.avail_females:
+                population.avail_females.remove(agent.index)
         if agent.age <= 1:
             if agent.parents:
-                population.dict[parents[0]].femaleState = FemaleState.cycling
-
+                population.dict[agent.parents[0]].femaleState = FemaleState.cycling
         if halfyear > 40:
             self.siring_success.append(len(agent.offspring))
+
+        del population.dict[agent.index]
+        population.all.remove(agent.index)
+        group.agents.remove(agent.index)
+        assert agent.index not in population.all
 
         return 1
 
@@ -158,22 +157,24 @@ class HamadryasSim(Simulation):
             population.halfyear = halfyear
 
             self.mortality_check(population)
-
             self.male_eligibility(population)
-
             self.get_young_natal_females(population)
 
             if population.avail_females:
                 for female in population.avail_females:
                     female = population.dict[female]
                     HamadryasDispersal.opportun_takeover(female, population)
-
+                population.avail_females = []
             males = [male for male in population.dict.values() if male.sex == 'm']
             for male in males:
                 self.male_choices(male, population)
+            if population.avail_females:
+                for female in population.avail_females:
+                    female = population.dict[female]
+                    HamadryasDispersal.opportun_takeover(female, population)
+                population.avail_females = []
 
             self.birth_check(population, halfyear)
-
             self.promotions(population)
 
     def male_eligibility(self, population):
@@ -183,6 +184,8 @@ class HamadryasSim(Simulation):
                 if agent.dispersed:
                     if agent.maleState is not MaleState.juvsol or MaleState.fol:
                         population.eligible_males.append(agent.index)
+                        if agent.maleState == MaleState.lea:
+                            population.groupsdict[agent.bandID].leadermales.append(agent.index)
 
     def get_young_natal_females(self, population):
         population.young_natal_females = []
@@ -191,13 +194,23 @@ class HamadryasSim(Simulation):
             if agent.sex == 'f':
                 if 2 <= agent.age < 5:
                     population.young_natal_females.append(agent.index)
+                elif agent.age == 5:
+                    population.avail_females.append(agent.index)
 
     def male_choices(self, male, population):
         if male.maleState == MaleState.fol:
-            pass
+            HamadryasDispersal.fol_choices(male, population, self)
         elif male.maleState == MaleState.sol:
-            pass
-        else:
+            HamadryasDispersal.sol_choices(male, population, self)
+        elif male.maleState == MaleState.lea:
+            if not male.females:
+                male.maleState = MaleState.sol
+                male.OMUID = None
+                if male.malefols:
+                    for malefol in male.malefols:
+                        malefol = population.dict[malefol]
+                        malefol.maleState = MaleState.sol
+                        malefol.OMUID = None
             #  leaders have no choices
             pass
 

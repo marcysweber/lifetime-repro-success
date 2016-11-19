@@ -1,30 +1,65 @@
-import random
-
-from agent import *
 from completesimulation import *
 
 
 class HamadryasDispersal:
     @staticmethod
-    def sol_choices(male, population):
+    def sol_choices(male, population, simulation):
         #  either do nothing, initial unit, challenge, or follow
-        pass
+
+        following = False
+
+        if random.uniform(0, 1) < 0.5 and population.young_natal_females:
+            HamadryasDispersal.attempt_init_unit(male, population, simulation)
+        elif population.groupsdict[male.bandID].leadermales:
+            random.shuffle(population.groupsdict[male.bandID].leadermales)
+
+            #  try to follow somebody
+            for leader_male in population.groupsdict[male.bandID].leadermales:
+                leader_male = population.dict[leader_male]
+                if leader_male.clanID == male.clanID and len(leader_male.females) >= 4 and len(
+                        leader_male.malefols) < 2:
+                    following = True
+                    HamadryasDispersal.follow(male, leader_male, population)
+                    break
+
+            # if that fails, try to challenge somebody
+            if not following:
+                leader_male = random.choice(population.groupsdict[male.bandID].leadermales)
+                leader_male = population.dict[leader_male]
+                HamadryasDispersal.challenge(male, leader_male, population, simulation)
+        else:  # nothing he can do
+            pass
 
     @staticmethod
     def follow(follower, leader, population):
-        pass
+        assert not follower.females
+        follower.OMUID = leader.index
+        leader.malefols.append(follower.index)
+        follower.maleState = MaleState.fol
 
     @staticmethod
-    def challenge(challenger, leader, population):
-        pass
+    def challenge(challenger, leader, population, simulation):
+        if challenger.get_rhp() > leader.get_rhp():
+            loser = leader
+            female = population.dict[random.choice(leader.females)]
+            HamadryasDispersal.add_female_to_omu(challenger, female, population, simulation)
+        else:
+            loser = challenger
+
+        # loser dies half of the time
+        if random.choice(["alive", "dead"]) == "dead":
+            simulation.killagent(loser, population, population.groupsdict[loser.bandID], population.halfyear)
 
     @staticmethod
-    def fol_choices(male, population):
+    def fol_choices(male, population, simulation):
         #  either do nothing, start initial unit
-        pass
+        if population.young_natal_females:
+            HamadryasDispersal.attempt_init_unit(male, population, simulation)
+        else:
+            pass
 
     @staticmethod
-    def attempt_init_unit(male, population):
+    def attempt_init_unit(male, population, simulation):
         lottery = []
         chance = 0.0
 
@@ -54,7 +89,7 @@ class HamadryasDispersal:
 
         female = population.dict[random.choice(lottery)]
         if random.uniform(0, 1) < chance:
-            HamadryasDispersal.add_female_to_omu(male, female, population)
+            HamadryasDispersal.add_female_to_omu(male, female, population, simulation)
 
     @staticmethod
     def inherit_females(dead_leader, population):
@@ -69,7 +104,7 @@ class HamadryasDispersal:
                 HamadryasDispersal.add_female_to_omu(male, female, population)
 
     @staticmethod
-    def opportun_takeover(female, population):
+    def opportun_takeover(female, population, simulation):
 
         lottery = []
 
@@ -89,13 +124,13 @@ class HamadryasDispersal:
                 lottery += [male.index]
 
         winner = population.dict[random.choice(lottery)]
-        HamadryasDispersal.add_female_to_omu(winner, female, population)
+        HamadryasDispersal.add_female_to_omu(winner, female, population, simulation)
 
     @staticmethod
-    def add_female_to_omu(male, female, population):
+    def add_female_to_omu(male, female, population, simulation):
         if female.offspring:
             if population.dict[female.offspring[-1]].age < 2:
-                Simulation.killagent(simulation, female.offspring[-1], population, female.bandID, population.halfyear)
+                simulation.killagent(female.offspring[-1], population, female.bandID, population.halfyear)
                 female.femaleState = FemaleState.cycling
 
         if male.maleState == MaleState.fol:
