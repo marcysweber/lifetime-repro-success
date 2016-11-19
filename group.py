@@ -1,12 +1,16 @@
 from agent import FemaleState
 
 class SavannahGroup:
+
     def __init__(self, index):
         self.index = index
         self.dominance_hierarchy = []
         self.agents = []
         self.excess_females = 0
         self.sorted_by_rhp = []
+
+    def do_nothing(self):
+        pass
 
     def get_excess_females(self, pop):
 
