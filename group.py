@@ -9,11 +9,7 @@ class SavannahGroup:
         self.excess_females = 0
         self.sorted_by_rhp = []
 
-    def do_nothing(self):
-        pass
-
     def get_excess_females(self, pop):
-
         males = 0
         cyc_females = 0
 
