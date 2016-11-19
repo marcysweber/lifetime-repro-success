@@ -79,7 +79,7 @@ class Simulation:
         return 1
 
     def birthagent(self, mother, population, halfyear):
-        sex = random.choice('m', 'f')
+        sex = random.choice(['m', 'f'])
 
         if mother.taxon == "hamadryas":
             group = mother.bandID
@@ -132,7 +132,6 @@ class HamadryasSim(Simulation):
 
             self.promotions(population)
 
-
 class GeladaSim(Simulation):
     #  loop with unique functions when needed
     def run_simulation(self):
@@ -173,22 +172,11 @@ class SavannahSim(Simulation):
     def dominance_calc(self, population, group):
 
         agents_in_group = [population.dict[idx] for idx in group.agents]
-        adult_males = []
-
-        for agent in agents_in_group:
-            if agent.sex == "m":
-                if agent.dispersed:
-                    adult_males.append(agent)
-
+        adult_males = [x for x in agents_in_group if x.sex == "m" and x.dispersed]
         group.sorted_by_rhp = sorted(adult_males, key=lambda agent: agent.get_rhp(), reverse=True)
         dominance_hierarchy = [agent.index for agent in group.sorted_by_rhp]
 
-        #  print group.sorted_by_rhp
-        #  print dominance_hierarchy[0]
-
         group.dominance_hierarchy = dominance_hierarchy
-
-        #  print group.sorted_by_rhp[0]
 
         alpha = population.dict[group.dominance_hierarchy[0]]
         tenure = alpha.alpha_tenure

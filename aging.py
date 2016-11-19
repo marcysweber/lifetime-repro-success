@@ -7,7 +7,7 @@ This file contains:
 from agent import FemaleState
 
 
-def promote_agent(self, this_agent):
+def promote_agent(this_agent):
     this_agent.age += 0.5
 
     if this_agent.femaleState:
