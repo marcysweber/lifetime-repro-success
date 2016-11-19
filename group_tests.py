@@ -42,6 +42,9 @@ class DominanceTests(unittest.TestCase):
         SavannahSeed.addagenttoseed(1, fakegroup, dompop, "m", None, None, 7)
         SavannahSeed.addagenttoseed(1, fakegroup, dompop, "m", None, None, 7)
 
+        for male in [agent for agent in dompop.dict.values() if agent.sex == "m"]:
+            male.dispersed = True
+
         dompop.dict[1].rhp = "5"
         dompop.dict[2].rhp = "1"
         dompop.dict[3].rhp = "2"

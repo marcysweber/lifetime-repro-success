@@ -172,8 +172,8 @@ class LifeTableTests(unittest.TestCase):
             if agent.sex == 'f':
                 females += 1
 
-        self.assertAlmostEqual(sired1201, 700, delta=50)
-        self.assertAlmostEqual(females, 1700, delta=100)
+        self.assertAlmostEqual(sired1201, 700, delta=70)
+        self.assertAlmostEqual(females, 1700, delta=170)
 
 
 class RhpTests(unittest.TestCase):
