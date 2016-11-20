@@ -75,14 +75,10 @@ class AgentClass(object):
         self.femaleState = None
         self.last_birth = 0
 
-        self.lottery = []
-
         self.parents = [mother, sire]
         self.offspring = []
 
         self.dispersed = False
-
-        self.taxon = ""
 
         #  set to True if born during sim
         self.born = False
@@ -91,10 +87,9 @@ class HamadryasAgent(AgentClass):
     #  defines the attributes that a hamadryas baboon must have
     def __init__(self, sex, mother, sire, bandID):
         self.taxon = "hamadryas"
-
         self.clanID = None
         self.bandID = bandID
-        self.OMU = None
+        self.OMUID = None
         self.maleState = None
         self.females = []
         self.malefols = []
@@ -165,10 +160,12 @@ class MakeAgents:
 
     @staticmethod
     def assignrhpcurve(agent):
+        score = None
         if agent.taxon == "hamadryas":
-            return random.choice("1", "2", "3", "4")
+            score = random.choice(["1", "2", "3", "4"])
         elif agent.taxon == "savannah":
-            return random.choice("1", "2", "3", "4", "5")
+            score = random.choice(["1", "2", "3", "4", "5"])
+        return score
 
     @staticmethod
     def get_unique_index(population):

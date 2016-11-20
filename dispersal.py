@@ -6,33 +6,52 @@ class HamadryasDispersal:
     def sol_choices(male, population, simulation):
         #  either do nothing, initial unit, challenge, or follow
 
-        following = False
+        busy = False
 
-        if random.uniform(0, 1) < 0.5 and population.young_natal_females:
+        if population.young_natal_females and population.groupsdict[male.bandID].leadermales:
+            if random.uniform(0, 1) < 0.5:
+                HamadryasDispersal.attempt_init_unit(male, population, simulation)
+                busy = True
+            else:
+                random.shuffle(population.groupsdict[male.bandID].leadermales)
+
+                #  try to follow somebody
+                for leader_male in population.groupsdict[male.bandID].leadermales:
+                    leader_male = population.dict[leader_male]
+                    if leader_male.clanID == male.clanID and len(leader_male.females) >= 3 and len(
+                            leader_male.malefols) < 2:
+                        HamadryasDispersal.follow(male, leader_male, population)
+                        busy = True
+                        break
+                    else:
+                        pass
+        elif population.young_natal_females:
             HamadryasDispersal.attempt_init_unit(male, population, simulation)
         elif population.groupsdict[male.bandID].leadermales:
             random.shuffle(population.groupsdict[male.bandID].leadermales)
-
             #  try to follow somebody
             for leader_male in population.groupsdict[male.bandID].leadermales:
                 leader_male = population.dict[leader_male]
                 if leader_male.clanID == male.clanID and len(leader_male.females) >= 4 and len(
                         leader_male.malefols) < 2:
-                    following = True
                     HamadryasDispersal.follow(male, leader_male, population)
+                    busy = True
                     break
+                else:
+                    pass
 
-            # if that fails, try to challenge somebody
-            if not following:
+        # if that fails, try to challenge somebody
+        if not busy:
+            if random.uniform(0, 1) > 0.5:
                 leader_male = random.choice(population.groupsdict[male.bandID].leadermales)
                 leader_male = population.dict[leader_male]
                 HamadryasDispersal.challenge(male, leader_male, population, simulation)
-        else:  # nothing he can do
-            pass
+
 
     @staticmethod
     def follow(follower, leader, population):
         assert not follower.females
+
         follower.OMUID = leader.index
         leader.malefols.append(follower.index)
         follower.maleState = MaleState.fol
@@ -87,9 +106,14 @@ class HamadryasDispersal:
         elif male.maleState == MaleState.sol:
             chance = 0.5
 
-        female = population.dict[random.choice(lottery)]
-        if random.uniform(0, 1) < chance:
-            HamadryasDispersal.add_female_to_omu(male, female, population, simulation)
+        if lottery:
+            female = population.dict[random.choice(lottery)]
+            if random.uniform(0, 1) < chance:
+                HamadryasDispersal.add_female_to_omu(male, female, population, simulation)
+            else:
+                pass
+        else:
+            pass
 
     @staticmethod
     def inherit_females(dead_leader, population):
@@ -144,8 +168,6 @@ class HamadryasDispersal:
         male.OMUID = male.index
         male.females.append(female.index)
         male.maleState = MaleState.lea
-
-        population.dict[female.OMUID].females.remove(female.index)
 
         if female.bandID != male.bandID:
             female.bandID = male.bandID

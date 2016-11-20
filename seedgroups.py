@@ -23,7 +23,7 @@ class SavannahSeed:
         for k in range(0, 8):
             #  make 8 adult males of any age
             SavannahSeed.addagenttoseed(groupindex, group, population, 'm', None, None,
-                                        (float(random.randrange(15, 50)) / 2.0))
+                                        (float(random.randrange(15, 40)) / 2.0))
 
         for l in range(0, 15):
             #  make 15 non-adult males of any age
@@ -51,7 +51,7 @@ class HamadryasSeed:
         for i in range(0, 13):
             HamadryasSeed.addagenttoseed(groupindex,
                                          group, population, 'm', None, None,
-                                         (float(random.randrange(11.0, 50.0)) / 2.0))
+                                         (float(random.randrange(12.0, 40.0)) / 2.0))
 
         # make some leaders, fols, and sols, and give clans and OMUs
         for j in range(0, len(group.agents)):
@@ -101,7 +101,7 @@ class HamadryasSeed:
 
         for k in range(0, 23):
             HamadryasSeed.addagenttoseed(groupindex, group, population, 'f', None, None,
-                                         (float(random.randrange(10.0, 50.0)) / 2.0))
+                                         (float(random.randrange(10.0, 40.0)) / 2.0))
 
         for l in range(0, 15):
             HamadryasSeed.addagenttoseed(groupindex, group, population, 'f', None, None,
@@ -109,7 +109,7 @@ class HamadryasSeed:
 
         for m in range(0, 14):
             HamadryasSeed.addagenttoseed(groupindex, group, population, 'm', None, None,
-                                         (float(random.randrange(0.0, 10.0)) / 2.0))
+                                         (float(random.randrange(0.0, 11.0)) / 2.0))
 
         assert len(group.leadermales) == 8
 
@@ -122,9 +122,9 @@ class HamadryasSeed:
         newagent = MakeAgents.makenewhamadryas(groupindex, sex, mother, sire, population, age)
 
         # assign adult females and all non-adults randomly to OMUs
-        if newagent.sex == 'f' or newagent.age < 5.5:
+        if newagent.sex == 'f' or newagent.age < 5.0:
             leaderindex = random.choice(group.leadermales)
-            newagent.OMU = leaderindex
+            newagent.OMUID = leaderindex
             leader = population.dict[leaderindex]
             newagent.clanID = leader.clanID
             if newagent.sex == 'f' and newagent.age >= 5.0:

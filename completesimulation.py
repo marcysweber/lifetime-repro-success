@@ -18,7 +18,7 @@ def main():
     savannah.run_simulation()
 
 
-class Population:
+class Population(object):
     def __init__(self):
         self.all = []
         self.dict = {}
@@ -39,7 +39,8 @@ class SavPopulation(Population):
     def __init__(self):
         super(SavPopulation, self).__init__()
 
-class Simulation:
+
+class Simulation(object):
     #  to hold generic functions pertaining to any/most sims.
 
     def __init__(self):
@@ -67,7 +68,6 @@ class Simulation:
                 elif agent.femaleState == FemaleState.pregnant:
                     self.birthagent(agent, population, halfyear)
                     agent.femaleState = FemaleState.nursing0
-
 
     def promotions(self, population):
         for agent in population.dict.keys():
@@ -130,10 +130,31 @@ class Simulation:
         population.dict[sire].offspring.append(infant.index)
         population.dict[sire].last_birth = halfyear
 
-
+        infant.born = True
         population.all.append(infant.index)
         population.dict[infant.index] = infant
         population.groupsdict[group].agents.append(infant.index)
+
+    def get_sex_age_ratios(self, population):
+        adult_females = 0
+        adult_males = 0
+        subadult_females = 0
+        subadult_males = 0
+
+        for agent in population.dict.values():
+            if agent.sex == 'f':
+                if agent.age >= 5:
+                    adult_females += 1
+                else:
+                    subadult_females += 1
+            elif agent.sex == 'm':
+                if agent.age >= 7:
+                    adult_males += 1
+                else:
+                    subadult_males += 1
+
+        return {"adult sex ratio": adult_females / adult_males,
+                "adult to nonadult ratio": (adult_females + adult_males) / (subadult_females + subadult_males)}
 
         #  also add here specialized lists!!!
 """
@@ -147,6 +168,9 @@ in hamadryas baboons and male dispersal in savannah.
 
 class HamadryasSim(Simulation):
     #  loop with unique functions when needed
+    def __init__(self):
+        super(HamadryasSim, self).__init__()
+
     def run_simulation(self):
         population = HamaPopulation()
 
@@ -176,6 +200,13 @@ class HamadryasSim(Simulation):
 
             self.birth_check(population, halfyear)
             self.promotions(population)
+
+        ratios = self.get_sex_age_ratios(population)
+
+        return {"sires": self.siring_success,
+                "pop size": len(population.all),
+                "adult sex ratio": ratios["adult sex ratio"],
+                "adult to nonadult ratio": ratios["adult to nonadult ratio"]}
 
     def male_eligibility(self, population):
         population.eligible_males = []
@@ -222,6 +253,9 @@ class GeladaSim(Simulation):
 
 class SavannahSim(Simulation):
     #  loop with unique functions when needed
+    def __init__(self):
+        super(SavannahSim, self).__init__()
+
     def run_simulation(self):
         population = SavPopulation()
 
@@ -243,6 +277,13 @@ class SavannahSim(Simulation):
             self.birth_check(population, halfyear)
 
             self.promotions(population)
+
+        ratios = self.get_sex_age_ratios(population)
+
+        return {"sires": self.siring_success,
+                "pop size": len(population.all),
+                "adult sex ratio": ratios["adult sex ratio"],
+                "adult to nonadult ratio": ratios["adult to nonadult ratio"]}
 
     def dispersal_check(self, population, halfyear):
         random.shuffle(population.all)
@@ -269,3 +310,46 @@ class SavannahSim(Simulation):
             alpha.alpha_tenure += 0.5
         else:
             alpha.alpha_tenure = 0.5
+
+
+def main():
+    savannah_conglomerate = []
+    savannah_sample = []
+    hamadryas_conglomerate = []
+    hamadryas_sample = []
+
+    savannah_pop_sizes = []
+    savannah_sex_ratios = []
+    savannah_age_ratios = []
+    hamadryas_pop_sizes = []
+    hamadryas_sex_ratios = []
+    hamadryas_age_ratios = []
+
+    for i in range(0, 1000):
+        sav_sim = SavannahSim()
+        sav_output = sav_sim.run_simulation()
+        hama_sim = HamadryasSim()
+        hama_output = hama_sim.run_simulation()
+
+        savannah_conglomerate.append(sav_output["sires"])
+        savannah_sample.append(random.choice(sav_output["sires"]))
+        hamadryas_conglomerate.append(hama_output["sires"])
+        hamadryas_sample.append(random.choice(hama_output["sires"]))
+
+        savannah_pop_sizes.append(sav_output["pop_size"])
+        savannah_sex_ratios.append(sav_output["adult sex ratio"])
+        savannah_age_ratios.append(sav_output["adult to nonadult ratio"])
+
+        hamadryas_pop_sizes.append(hama_output["pop_size"])
+        hamadryas_sex_ratios.append(sav_output["adult sex ratio"])
+        hamadryas_age_ratios.append(sav_output["adult to nonadult ratio"])
+
+    print "Savannah population sizes: " + str(savannah_pop_sizes)
+    print "Hamadryas population sizes: " + str(hamadryas_pop_sizes)
+
+    with open('hama_vs_sav_compar.csv', 'w') as csvfile:
+        pass
+
+
+if __name__ == '__main__':
+    main()
