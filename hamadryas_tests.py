@@ -103,7 +103,7 @@ class ChallengeTests(unittest.TestCase):
                 followed += 1
 
         print became_leader, followed, died
-        self.assertAlmostEqual(followed, 450, delta=45)
+        self.assertAlmostEqual(followed, 450, delta=55)
         self.assertAlmostEqual(became_leader, 250, delta=25)
         self.assertAlmostEqual(10, died, delta=5)
 
