@@ -150,7 +150,49 @@ class ChallengeTests(unittest.TestCase):
         self.assertEqual(0, died)
 
     def test_disp_between_bands(self):
-        pass
+        change_OMU = 0
+        change_clan = 0
+        change_band = 0
+
+        for i in range(0, 1000):
+            band_disp_sim = HamadryasSim()
+            band_disp_pop = HamaPopulation()
+
+            for groupindex in range(0, 10):
+                band_disp_pop = HamadryasSeed.makeseed(groupindex, band_disp_pop)
+
+            female_to_disp = band_disp_pop.dict[14]
+            start_OMU = female_to_disp.OMUID
+            start_clan = female_to_disp.clanID
+            start_band = female_to_disp.bandID
+
+            band_disp_sim.killagent(band_disp_pop.dict[female_to_disp.OMUID],
+                                    band_disp_pop,
+                                    band_disp_pop.groupsdict[0],
+                                    50)
+            band_disp_sim.male_eligibility(band_disp_pop)
+            self.assertTrue(band_disp_pop.eligible_males)
+
+            HamadryasDispersal.opportun_takeover(female_to_disp,
+                                                 band_disp_pop,
+                                                 band_disp_sim)
+
+            if female_to_disp.OMUID != start_OMU:
+                change_OMU += 1
+            if female_to_disp.clanID != start_clan and female_to_disp.bandID == start_band:
+                change_clan += 1
+            if female_to_disp.bandID != start_band:
+                change_band += 1
+
+        print "Moved between OMUs: " + str(change_OMU)
+        print "Stayed in natal clan: " + str(1000 - change_band - change_clan)
+        print "Moved between clans within a band: " + str(change_clan)
+        print "Moved between bands: " + str(change_band)
+
+        self.assertEqual(1000, change_OMU)
+        self.assertAlmostEqual(150, change_clan, delta=50)
+        self.assertAlmostEqual(600, change_band, delta=50)
+
 
     def test_infanticide(self):
         pass

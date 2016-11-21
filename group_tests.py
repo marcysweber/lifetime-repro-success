@@ -79,7 +79,7 @@ class DispersalTests(unittest.TestCase):
 
         disp_pop.groupsdict = {1: disp_group_1, 2: disp_group_2}
 
-        SavannahDispersal.disperse(disp_pop.dict[21], disp_pop)
+        SavannahDispersal.disperse(disp_pop.dict[21], disp_pop, disp_sim)
 
         self.assertNotIn(21, disp_group_1.agents)
 
@@ -87,7 +87,7 @@ class DispersalTests(unittest.TestCase):
 
         total_dispersals_to_1 = 0
 
-        for i in range(0, 1000):
+        for i in range(0, 1150):
             disp_sim = SavannahSim()
             disp_pop = Population()
             disp_group_1 = SavannahGroup(1)
@@ -116,7 +116,7 @@ class DispersalTests(unittest.TestCase):
                         agent = disp_pop.dict[agentindex]
                         agent.femaleState = FemaleState.cycling
 
-            SavannahDispersal.disperse(disp_pop.dict[27], disp_pop)
+            SavannahDispersal.disperse(disp_pop.dict[27], disp_pop, disp_sim)
 
             total_dispersals_to_1 += len(disp_group_1.agents) - 15
 

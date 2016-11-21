@@ -37,6 +37,9 @@ class SavannahSeed:
     @staticmethod
     def addagenttoseed(groupindex, group, population, sex, mother, sire, age):
         newagent = MakeAgents.makenewsavannah(groupindex, sex, mother, sire, population, age)
+        if newagent.sex == 'm' and newagent.age > 7:
+            newagent.dispersed = True
+
         population.all.append(newagent.index)
         population.dict[newagent.index] = newagent
         group.agents.append(newagent.index)
@@ -56,15 +59,16 @@ class HamadryasSeed:
         # make some leaders, fols, and sols, and give clans and OMUs
         for j in range(0, len(group.agents)):
             male = population.dict[group.agents[j]]
+            male.dispersed = True
             if j < 3:
                 male.clanID = 1
                 if j == 0 or j == 2:
                     male.maleState = MaleState.lea
-                    male.OMU = male.index
+                    male.OMUID = male.index
                     group.leadermales.append(male.index)
                 else:
                     male.maleState = MaleState.fol
-                    male.OMU = group.agents[j - 1]
+                    male.OMUID = group.agents[j - 1]
                     population.dict[group.agents[j - 1]].malefols.append(male.index)
 
             elif j < 8:
@@ -72,32 +76,32 @@ class HamadryasSeed:
 
                 if j == 3 or j == 5 or j == 6:
                     male.maleState = MaleState.lea
-                    male.OMU = male.index
+                    male.OMUID = male.index
                     group.leadermales.append(male.index)
 
                 elif j == 4:
                     male.maleState = MaleState.fol
-                    male.OMU = group.agents[j - 1]
+                    male.OMUID = group.agents[j - 1]
                     population.dict[group.agents[j - 1]].malefols.append(male.index)
 
                 else:
                     male.maleState = MaleState.sol
-                    male.OMU = None
+                    male.OMUID = None
             else:
                 male.clanID = 3
                 if j < 11:
                     male.maleState = MaleState.lea
-                    male.OMU = male.index
+                    male.OMUID = male.index
                     group.leadermales.append(male.index)
 
                 elif j == 11:
                     male.maleState = MaleState.fol
-                    male.OMU = group.agents[j - 1]
+                    male.OMUID = group.agents[j - 1]
                     population.dict[group.agents[j - 1]].malefols.append(male.index)
 
                 else:
                     male.maleState = MaleState.sol
-                    male.OMU = None
+                    male.OMUID = None
 
         for k in range(0, 23):
             HamadryasSeed.addagenttoseed(groupindex, group, population, 'f', None, None,

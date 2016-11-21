@@ -116,7 +116,7 @@ class HamadryasDispersal:
             pass
 
     @staticmethod
-    def inherit_females(dead_leader, population):
+    def inherit_females(dead_leader, population, simulation):
         females = dead_leader.females
         males = dead_leader.malefols
 
@@ -125,7 +125,7 @@ class HamadryasDispersal:
             female = random.choice(females)
             female = population.dict[female]
             if random.uniform(0, 1) < 0.9:  # 90% chance of inheriting
-                HamadryasDispersal.add_female_to_omu(male, female, population)
+                HamadryasDispersal.add_female_to_omu(male, female, population, simulation)
 
     @staticmethod
     def opportun_takeover(female, population, simulation):
@@ -158,7 +158,8 @@ class HamadryasDispersal:
                 female.femaleState = FemaleState.cycling
 
         if male.maleState == MaleState.fol:
-            population.dict[male.OMUID].malefols.remove(male.index)
+            if male.OMUID in population.all:
+                population.dict[male.OMUID].malefols.remove(male.index)
 
         if female.dispersed:
             population.dict[female.OMUID].females.remove(female.index)
@@ -172,7 +173,7 @@ class HamadryasDispersal:
         if female.bandID != male.bandID:
             female.bandID = male.bandID
             population.groupsdict[male.bandID].agents.append(female.index)
-            population.groupsdict[female.bandID].agent.remove(female.index)
+            population.groupsdict[female.bandID].agents.remove(female.index)
 
         female.clanID = male.clanID
         female.OMUID = male.index
@@ -180,26 +181,29 @@ class HamadryasDispersal:
 
 class SavannahDispersal:
     @staticmethod
-    def disperse(male, pop):
-        cand_groups = []
+    def disperse(male, pop, sim):
+        if random.uniform(0, 1) > 0.13:
+            cand_groups = []
 
-        for group in pop.groupsdict:
-            group = pop.groupsdict[group]
-            if group.index is not male.troopID:
-                group.excess_females = group.get_excess_females(pop)
-                cand_groups.append(group)
+            for group in pop.groupsdict:
+                group = pop.groupsdict[group]
+                if group.index is not male.troopID:
+                    group.excess_females = group.get_excess_females(pop)
+                    cand_groups.append(group)
 
-        group_lots = []
-        for group in cand_groups:
-            this_group_lots = group.excess_females + 15
-            for i in range(0, this_group_lots):
-                group_lots.append(group.index)
+            group_lots = []
+            for group in cand_groups:
+                this_group_lots = group.excess_females + 15
+                for i in range(0, this_group_lots):
+                    group_lots.append(group.index)
 
-        dest_group = random.choice(group_lots)
-        dest_group = pop.groupsdict[dest_group]
+            dest_group = random.choice(group_lots)
+            dest_group = pop.groupsdict[dest_group]
 
-        pop.groupsdict[male.troopID].agents.remove(male.index)
-        male.troopID = dest_group.index
-        dest_group.agents.append(male.index)
-        if not male.dispersed:
-            male.dispersed = True
+            pop.groupsdict[male.troopID].agents.remove(male.index)
+            male.troopID = dest_group.index
+            dest_group.agents.append(male.index)
+            if not male.dispersed:
+                male.dispersed = True
+        else:
+            sim.killagent(male, pop, pop.groupsdict[male.troopID], pop.halfyear)

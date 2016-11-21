@@ -79,11 +79,12 @@ class Simulation(object):
             if agent.offspring:
                 if population.dict[agent.offspring[-1]].age < 2:
                     self.killagent(population.dict[agent.offspring[-1]], population, group, halfyear)
-        if agent.females:  # if he is a hamadryas leader male
-            if agent.malefols:  # malefols inherit first
-                HamadryasDispersal.inherit_females(agent, population)
-            # after inheritance, females are "up for grabs"
-            population.avail_females.append(agent.females)
+        if agent.taxon == "hamadryas":
+            if agent.females:  # if he is a hamadryas leader male
+                if agent.malefols:  # malefols inherit first
+                    HamadryasDispersal.inherit_females(agent, population, self)
+                # after inheritance, females are "up for grabs"
+                population.avail_females.append(agent.females)
         if agent.taxon == "hamadryas" and agent.sex == 'f':
             if agent.dispersed:
                 population.dict[agent.OMUID].females.remove(agent.index)
@@ -293,7 +294,7 @@ class SavannahSim(Simulation):
                 if agent.last_birth > halfyear - 2:
                     if population.groupsdict[agent.troopID].get_excess_females(population) < 1:
                         if random.uniform(0, 1) <= 0.5:
-                            SavannahDispersal.disperse(agent, population)
+                            SavannahDispersal.disperse(agent, population, self)
 
     def dominance_calc(self, population, group):
 
