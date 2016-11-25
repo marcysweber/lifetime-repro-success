@@ -13,7 +13,6 @@ class HamadryasDispersal:
                 HamadryasDispersal.attempt_init_unit(male, population, simulation)
                 busy = True
             else:
-                random.shuffle(population.groupsdict[male.bandID].leadermales)
 
                 #  try to follow somebody
                 for leader_male in population.groupsdict[male.bandID].leadermales:
@@ -28,7 +27,6 @@ class HamadryasDispersal:
         elif population.young_natal_females:
             HamadryasDispersal.attempt_init_unit(male, population, simulation)
         elif population.groupsdict[male.bandID].leadermales:
-            random.shuffle(population.groupsdict[male.bandID].leadermales)
             #  try to follow somebody
             for leader_male in population.groupsdict[male.bandID].leadermales:
                 leader_male = population.dict[leader_male]
@@ -41,11 +39,13 @@ class HamadryasDispersal:
                     pass
 
         # if that fails, try to challenge somebody
-        if not busy:
+        if not busy and population.groupsdict[male.bandID].leadermales:
             if random.uniform(0, 1) > 0.5:
-                leader_male = random.choice(population.groupsdict[male.bandID].leadermales)
-                leader_male = population.dict[leader_male]
-                HamadryasDispersal.challenge(male, leader_male, population, simulation)
+                leader_male = random.sample(population.groupsdict[male.bandID].leadermales, 1)
+                leader_male = population.dict[leader_male[0]]
+
+                if leader_male.females:
+                    HamadryasDispersal.challenge(male, leader_male, population, simulation)
 
 
     @staticmethod
@@ -147,33 +147,59 @@ class HamadryasDispersal:
             for i in range(0, reps):
                 lottery += [male.index]
 
-        winner = population.dict[random.choice(lottery)]
-        HamadryasDispersal.add_female_to_omu(winner, female, population, simulation)
+        if lottery:
+            winner = population.dict[random.choice(lottery)]
+            HamadryasDispersal.add_female_to_omu(winner, female, population, simulation)
 
     @staticmethod
     def add_female_to_omu(male, female, population, simulation):
+        #  INFANTICIDE
         if female.offspring:
-            if population.dict[female.offspring[-1]].age < 2:
-                simulation.killagent(female.offspring[-1], population, female.bandID, population.halfyear)
-                female.femaleState = FemaleState.cycling
+            depen_live_offspring = [offspring for offspring in female.offspring
+                                    if offspring in population.dict and population.dict[offspring].age < 2]
+            for offspring in depen_live_offspring:
+                if random.uniform(0, 1) > 0.5:
+                    infant = population.dict[offspring]
+                    simulation.killagent(infant, population,
+                                         population.groupsdict[female.bandID],
+                                         population.halfyear)
+                    female.femaleState = FemaleState.cycling
+                else:
+                    infant = population.dict[offspring]
+                    population.groupsdict[infant.bandID].agents.remove(infant.index)
+
+                    infant.OMUID = male.index
+                    infant.bandID = male.bandID
+                    infant.clanID = male.clanID
+
+                    population.groupsdict[male.bandID].agents.append(infant.index)
+
+        # BRUCE EFFECT
+        if female.femaleState == FemaleState.pregnant:
+            assert female.sire_of_fetus != male.index
+            female.femaleState = FemaleState.cycling
+            female.sire_of_fetus = None
 
         if male.maleState == MaleState.fol:
             if male.OMUID in population.all:
                 population.dict[male.OMUID].malefols.remove(male.index)
 
         if female.dispersed:
-            population.dict[female.OMUID].females.remove(female.index)
+            if female.OMUID in population.all:
+                population.dict[female.OMUID].females.remove(female.index)
         else:
             female.dispersed = True
+            if female.index in population.young_natal_females:
+                population.young_natal_females.remove(female.index)
 
         male.OMUID = male.index
         male.females.append(female.index)
         male.maleState = MaleState.lea
 
         if female.bandID != male.bandID:
+            population.groupsdict[female.bandID].agents.remove(female.index)
             female.bandID = male.bandID
             population.groupsdict[male.bandID].agents.append(female.index)
-            population.groupsdict[female.bandID].agents.remove(female.index)
 
         female.clanID = male.clanID
         female.OMUID = male.index
@@ -185,8 +211,7 @@ class SavannahDispersal:
         if random.uniform(0, 1) > 0.13:
             cand_groups = []
 
-            for group in pop.groupsdict:
-                group = pop.groupsdict[group]
+            for group in pop.groupsdict.values():
                 if group.index is not male.troopID:
                     group.excess_females = group.get_excess_females(pop)
                     cand_groups.append(group)
@@ -197,13 +222,14 @@ class SavannahDispersal:
                 for i in range(0, this_group_lots):
                     group_lots.append(group.index)
 
-            dest_group = random.choice(group_lots)
-            dest_group = pop.groupsdict[dest_group]
+            if group_lots:
+                dest_group = random.choice(group_lots)
+                dest_group = pop.groupsdict[dest_group]
 
-            pop.groupsdict[male.troopID].agents.remove(male.index)
-            male.troopID = dest_group.index
-            dest_group.agents.append(male.index)
-            if not male.dispersed:
-                male.dispersed = True
+                pop.groupsdict[male.troopID].agents.remove(male.index)
+                male.troopID = dest_group.index
+                dest_group.agents.append(male.index)
+                if not male.dispersed:
+                    male.dispersed = True
         else:
             sim.killagent(male, pop, pop.groupsdict[male.troopID], pop.halfyear)

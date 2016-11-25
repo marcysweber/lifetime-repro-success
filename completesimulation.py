@@ -1,10 +1,13 @@
+import collections
 import random
+
+import numpy
 
 import aging
 import lifetables
 from agent import MakeAgents, MaleState, FemaleState
 from dispersal import SavannahDispersal, HamadryasDispersal
-from paternity import HamadryasPaternity, SavannahPaternity
+from paternity import SavannahPaternity
 from seedgroups import SavannahSeed, HamadryasSeed
 
 
@@ -20,8 +23,8 @@ def main():
 
 class Population(object):
     def __init__(self):
-        self.all = []
         self.dict = {}
+        self.all = self.dict.keys()
         self.groupsdict = {}
         self.topeverindex = 0
         self.halfyear = 0
@@ -44,30 +47,50 @@ class Simulation(object):
     #  to hold generic functions pertaining to any/most sims.
 
     def __init__(self):
-        self.siring_success = []
+        self.siring_success = {}
+        self.interbirth_int = []
 
     def mortality_check(self, population, halfyear):
         ret = 0
-        for agentindex in list(population.all):
-            agent = population.dict[agentindex]
-            getdeathchance = lifetables.getdeathchance(agent)
-            dieroll = random.uniform(0, 1)
-            if getdeathchance >= dieroll:
-                ret += self.killagent(agent, population, population.groupsdict[agent.troopID], halfyear)
+
+        for agentindex in list(population.dict.keys()):
+            if agentindex in population.dict.keys():
+                agent = population.dict[agentindex]
+                getdeathchance = lifetables.getdeathchance(agent)
+                dieroll = random.uniform(0, 1)
+                if getdeathchance >= dieroll:
+                    if agent.taxon == "savannah":
+                        ret += self.killagent(agent, population, population.groupsdict[agent.troopID], halfyear)
+                    elif agent.taxon == "hamadryas":
+                        ret += self.killagent(agent, population, population.groupsdict[agent.bandID], halfyear)
         return ret
 
     def birth_check(self, population, halfyear):
-        for agentindex in population.all:
+        births = 0
+        for agentindex in population.dict.keys():
             agent = population.dict[agentindex]
             if agent.sex == 'f':
                 if agent.femaleState == FemaleState.cycling:
-                    birthchance = lifetables.getbirthchance(agent)
-                    dieroll = random.uniform(0, 1)
-                    if birthchance >= dieroll:
-                        agent.femaleState = FemaleState.pregnant
+                    if agent.taxon == "hamadryas":
+                        birthchance = lifetables.getbirthchance(agent)
+                        dieroll = random.uniform(0, 1)
+                        if birthchance >= dieroll:
+                            agent.femaleState = FemaleState.pregnant
+                            agent.sire_of_fetus = agent.OMUID
+                    elif agent.taxon == "savannah":
+                        dom_hier = population.groupsdict[agent.troopID].dominance_hierarchy
+                        if dom_hier:
+                            birthchance = lifetables.getbirthchance(agent)
+                            dieroll = random.uniform(0, 1)
+                            if birthchance >= dieroll:
+                                agent.femaleState = FemaleState.pregnant
+                                agent.sire_of_fetus = SavannahPaternity.savannahsire(dom_hier, population, halfyear)
+
                 elif agent.femaleState == FemaleState.pregnant:
                     self.birthagent(agent, population, halfyear)
                     agent.femaleState = FemaleState.nursing0
+                    births += 1
+        return births
 
     def promotions(self, population):
         for agent in population.dict.keys():
@@ -76,31 +99,44 @@ class Simulation(object):
 
     def killagent(self, agent, population, group, halfyear):
         if agent.sex == 'f':
-            if agent.offspring:
+            if agent.offspring and agent.offspring[-1] in population.dict.keys():
                 if population.dict[agent.offspring[-1]].age < 2:
                     self.killagent(population.dict[agent.offspring[-1]], population, group, halfyear)
-        if agent.taxon == "hamadryas":
+        if agent.taxon == "hamadryas" and agent.sex == 'm':
+            if agent.index in population.eligible_males:
+                population.eligible_males.remove(agent.index)
             if agent.females:  # if he is a hamadryas leader male
                 if agent.malefols:  # malefols inherit first
                     HamadryasDispersal.inherit_females(agent, population, self)
+
                 # after inheritance, females are "up for grabs"
-                population.avail_females.append(agent.females)
-        if agent.taxon == "hamadryas" and agent.sex == 'f':
-            if agent.dispersed:
+                population.avail_females += agent.females
+
+            if agent.index in group.leadermales:
+                group.leadermales.remove(agent.index)
+            if agent.maleState == MaleState.fol:
+                if agent.OMUID in population.dict.keys():
+                    population.dict[agent.OMUID].malefols.remove(agent.index)
+        elif agent.taxon == "hamadryas" and agent.sex == 'f':
+            if agent.dispersed and agent.OMUID in population.dict.keys():
                 population.dict[agent.OMUID].females.remove(agent.index)
 
             if agent.index in population.avail_females:
                 population.avail_females.remove(agent.index)
+
         if agent.age <= 1:
             if agent.parents:
-                population.dict[agent.parents[0]].femaleState = FemaleState.cycling
-        if halfyear > 40:
-            self.siring_success.append(len(agent.offspring))
+                if agent.parents[0] in population.dict.keys():
+                    population.dict[agent.parents[0]].femaleState = FemaleState.cycling
+        if agent.sex == 'm':
+            if halfyear > 40:
+                self.siring_success[agent.index] = (len(agent.offspring))
 
         del population.dict[agent.index]
         population.all.remove(agent.index)
         group.agents.remove(agent.index)
         assert agent.index not in population.all
+        assert agent.index not in population.dict.keys()
 
         return 1
 
@@ -109,27 +145,29 @@ class Simulation(object):
 
         if mother.taxon == "hamadryas":
             group = mother.bandID
-            sire = HamadryasPaternity.hamadryassire(mother, population, halfyear)
+            sire = mother.sire_of_fetus
 
             infant = MakeAgents.makenewhamadryas(group, sex, mother.index,
                                                  sire,
-                                                 population)
-            infant.OMU = mother.OMU
+                                                 population, self)
+            infant.OMUID = mother.OMUID
             infant.clanID = mother.clanID
 
         elif mother.taxon == "savannah":
             group = mother.troopID
-            dom_hier = population.groupsdict[group].dominance_hierarchy
-            sire = SavannahPaternity.savannahsire(dom_hier, population, halfyear)
+            sire = mother.sire_of_fetus
 
             infant = MakeAgents.makenewsavannah(group, sex, mother.index,
                                                 sire,
-                                                population)
+                                                population, self)
 
-        mother.offspring.append(infant.index)
-        mother.last_birth = halfyear
-        population.dict[sire].offspring.append(infant.index)
-        population.dict[sire].last_birth = halfyear
+        mother.sire_of_fetus = None
+        if not mother.last_birth:
+            mother.last_birth = halfyear
+        else:
+            interval = halfyear - mother.last_birth
+            self.interbirth_int += [interval]
+            mother.last_birth = halfyear
 
         infant.born = True
         population.all.append(infant.index)
@@ -137,25 +175,31 @@ class Simulation(object):
         population.groupsdict[group].agents.append(infant.index)
 
     def get_sex_age_ratios(self, population):
-        adult_females = 0
-        adult_males = 0
-        subadult_females = 0
-        subadult_males = 0
+        adult_females = 0.0
+        adult_males = 0.0
+        subadult_females = 0.0
+        subadult_males = 0.0
+
+        female_states = collections.Counter(
+            [agent.femaleState for agent in population.dict.values() if agent.sex == "f"])
 
         for agent in population.dict.values():
             if agent.sex == 'f':
                 if agent.age >= 5:
-                    adult_females += 1
+                    adult_females += 1.0
                 else:
-                    subadult_females += 1
+                    subadult_females += 1.0
             elif agent.sex == 'm':
                 if agent.age >= 7:
-                    adult_males += 1
+                    adult_males += 1.0
                 else:
-                    subadult_males += 1
+                    subadult_males += 1.0
 
         return {"adult sex ratio": adult_females / adult_males,
-                "adult to nonadult ratio": (adult_females + adult_males) / (subadult_females + subadult_males)}
+                "adult to nonadult ratio": (adult_females + adult_males) / (subadult_females + subadult_males),
+                "adult females: ": adult_females,
+                "adult males: ": adult_males,
+                "female states: ": female_states}
 
         #  also add here specialized lists!!!
 """
@@ -176,19 +220,21 @@ class HamadryasSim(Simulation):
         population = HamaPopulation()
 
         for groupindex in range(0, 10):
-            population = HamadryasSeed.makeseed(groupindex, population)
+            population = HamadryasSeed.makeseed(groupindex, population, self)
 
         for halfyear in range(0, 400):
             population.halfyear = halfyear
+            for group in population.groupsdict.values():
+                group.leadermales = set()
 
-            self.mortality_check(population)
+            self.mortality_check(population, halfyear)
             self.male_eligibility(population)
             self.get_young_natal_females(population)
 
             if population.avail_females:
                 for female in population.avail_females:
                     female = population.dict[female]
-                    HamadryasDispersal.opportun_takeover(female, population)
+                    HamadryasDispersal.opportun_takeover(female, population, self)
                 population.avail_females = []
             males = [male for male in population.dict.values() if male.sex == 'm']
             for male in males:
@@ -196,11 +242,15 @@ class HamadryasSim(Simulation):
             if population.avail_females:
                 for female in population.avail_females:
                     female = population.dict[female]
-                    HamadryasDispersal.opportun_takeover(female, population)
+                    HamadryasDispersal.opportun_takeover(female, population, self)
                 population.avail_females = []
 
-            self.birth_check(population, halfyear)
+            print self.birth_check(population, halfyear)
             self.promotions(population)
+
+            print "Hamadryas half-year " + str(halfyear) + " done!"
+            if len(population.all) == 0:
+                break
 
         ratios = self.get_sex_age_ratios(population)
 
@@ -211,13 +261,14 @@ class HamadryasSim(Simulation):
 
     def male_eligibility(self, population):
         population.eligible_males = []
+
         for agent in population.dict.values():
             if agent.sex == 'm':
                 if agent.dispersed:
-                    if agent.maleState is not MaleState.juvsol or MaleState.fol:
+                    if (agent.maleState is not MaleState.juvsol) and (agent.maleState is not MaleState.fol):
                         population.eligible_males.append(agent.index)
                         if agent.maleState == MaleState.lea:
-                            population.groupsdict[agent.bandID].leadermales.append(agent.index)
+                            population.groupsdict[agent.bandID].leadermales.add(agent.index)
 
     def get_young_natal_females(self, population):
         population.young_natal_females = []
@@ -243,8 +294,8 @@ class HamadryasSim(Simulation):
                         malefol = population.dict[malefol]
                         malefol.maleState = MaleState.sol
                         malefol.OMUID = None
+                male.malefols = []
             #  leaders have no choices
-            pass
 
 
 class GeladaSim(Simulation):
@@ -262,7 +313,7 @@ class SavannahSim(Simulation):
 
         #  loop here for seed group/population
         for groupindex in range(0, 10):
-            population = SavannahSeed.makeseed(groupindex, population)
+            population = SavannahSeed.makeseed(groupindex, population, self)
 
         for halfyear in range(0, 400, 1):
             population.halfyear = halfyear
@@ -275,10 +326,16 @@ class SavannahSim(Simulation):
                 group = population.groupsdict[group]
                 self.dominance_calc(population, group)
 
-            self.birth_check(population, halfyear)
-
+            print self.birth_check(population, halfyear)
             self.promotions(population)
 
+            if len(population.all) == 0:
+                break
+            print "Savannah half-year " + str(halfyear) + " done!"
+            print "Population: " + str(len(population.all))
+            print self.get_sex_age_ratios(population)
+
+        print "Interbirth Interval: " + str(numpy.mean(self.interbirth_int))
         ratios = self.get_sex_age_ratios(population)
 
         return {"sires": self.siring_success,
@@ -287,11 +344,9 @@ class SavannahSim(Simulation):
                 "adult to nonadult ratio": ratios["adult to nonadult ratio"]}
 
     def dispersal_check(self, population, halfyear):
-        random.shuffle(population.all)
-        for agent in population.all:
-            agent = population.dict[agent]
-            if agent.sex == 'm' and agent.age > 7:
-                if agent.last_birth > halfyear - 2:
+        for agent in population.dict.values():
+            if agent.sex == 'm' and agent.age >= 7:
+                if agent.last_birth < halfyear - 2:
                     if population.groupsdict[agent.troopID].get_excess_females(population) < 1:
                         if random.uniform(0, 1) <= 0.5:
                             SavannahDispersal.disperse(agent, population, self)
@@ -305,19 +360,18 @@ class SavannahSim(Simulation):
 
         group.dominance_hierarchy = dominance_hierarchy
 
-        alpha = population.dict[group.dominance_hierarchy[0]]
-        tenure = alpha.alpha_tenure
-        if tenure is not None:
-            alpha.alpha_tenure += 0.5
-        else:
-            alpha.alpha_tenure = 0.5
+        if dominance_hierarchy:
+            alpha = population.dict[group.dominance_hierarchy[0]]
+            tenure = alpha.alpha_tenure
+            if tenure is not None:
+                alpha.alpha_tenure += 0.5
+            else:
+                alpha.alpha_tenure = 0.5
 
 
 def main():
-    savannah_conglomerate = []
-    savannah_sample = []
-    hamadryas_conglomerate = []
-    hamadryas_sample = []
+    savannah_offspring = {}
+    hamadryas_offspring = {}
 
     savannah_pop_sizes = []
     savannah_sex_ratios = []
@@ -332,10 +386,8 @@ def main():
         hama_sim = HamadryasSim()
         hama_output = hama_sim.run_simulation()
 
-        savannah_conglomerate.append(sav_output["sires"])
-        savannah_sample.append(random.choice(sav_output["sires"]))
-        hamadryas_conglomerate.append(hama_output["sires"])
-        hamadryas_sample.append(random.choice(hama_output["sires"]))
+        savannah_offspring[i] = (sav_output["sires"])
+        hamadryas_offspring[i] = (hama_output["sires"])
 
         savannah_pop_sizes.append(sav_output["pop_size"])
         savannah_sex_ratios.append(sav_output["adult sex ratio"])

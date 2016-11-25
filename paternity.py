@@ -6,7 +6,7 @@ class HamadryasPaternity:
     def hamadryassire(mother, population, halfyear):
         sire = None
         if halfyear >= 40:
-            sire = population.dict[mother.OMU].index
+            sire = population.dict[mother.OMUID].index
         return sire
 
 

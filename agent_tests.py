@@ -112,7 +112,7 @@ class LifeTableTests(unittest.TestCase):
         group = SavannahGroup(0)
 
         for i in range(0, 1000):
-            SavannahSeed.addagenttoseed(0, group, fakepop, 'f', None, None, 22.0)
+            SavannahSeed.addagenttoseed(0, group, fakepop, 'f', None, None, 22.0, fakesim)
         fakepop.groupsdict[0] = group
 
         for agent in fakepop.all:
@@ -131,14 +131,14 @@ class LifeTableTests(unittest.TestCase):
         group = SavannahGroup(0)
 
         for i in range(0, 1200):
-            SavannahSeed.addagenttoseed(0, group, fakepop, 'f', None, None, 5.0)
+            SavannahSeed.addagenttoseed(0, group, fakepop, 'f', None, None, 5.0, fakesim)
 
         for female in fakepop.dict.values():
             female.femaleState = FemaleState.cycling
             female.taxon = "savannah"
 
-        SavannahSeed.addagenttoseed(0, group, fakepop, 'm', None, None, 9)
-        SavannahSeed.addagenttoseed(0, group, fakepop, 'm', None, None, 18)
+        SavannahSeed.addagenttoseed(0, group, fakepop, 'm', None, None, 9, fakesim)
+        SavannahSeed.addagenttoseed(0, group, fakepop, 'm', None, None, 18, fakesim)
         fakepop.groupsdict[0] = group
 
         fakepop.dict[1201].rhp = "1"

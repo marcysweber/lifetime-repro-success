@@ -73,7 +73,8 @@ class AgentClass(object):
         self.sex = sex
 
         self.femaleState = None
-        self.last_birth = 0
+        self.last_birth = None
+        self.sire_of_fetus = None
 
         self.parents = [mother, sire]
         self.offspring = []
@@ -119,7 +120,7 @@ class SavannahAgent(AgentClass):
 
 class MakeAgents:
     @staticmethod
-    def makenewsavannah(troopID, sex, mother, sire, population, age=0.0):
+    def makenewsavannah(troopID, sex, mother, sire, population, sim, age=0.0):
 
         newagent = SavannahAgent(sex, mother, sire, troopID)
 
@@ -134,13 +135,18 @@ class MakeAgents:
 
         #  parents get credit
         if sire and mother:
-            population.dict[sire].offspring.append(newagent.index)
+            if sire in population.dict.keys():
+                population.dict[sire].offspring.append(newagent.index)
+                population.dict[sire].last_birth = population.halfyear
+
+            elif sire in sim.siring_success.keys():
+                sim.siring_success[sire] += 1
             population.dict[mother].offspring.append(newagent.index)
 
         return newagent
 
     @staticmethod
-    def makenewhamadryas(bandID, sex, mother, sire, population, age=0.0):
+    def makenewhamadryas(bandID, sex, mother, sire, population, sim, age=0.0):
         newagent = HamadryasAgent(sex, mother, sire, bandID)
         newagent.age = age
 
@@ -152,8 +158,13 @@ class MakeAgents:
         newagent.index = MakeAgents.get_unique_index(population)
 
         #  parents get credit
-        if sire and mother:
-            population.dict[sire].offspring.append(newagent.index)
+        if sire:
+            if sire in population.dict.keys():
+                population.dict[sire].offspring.append(newagent.index)
+                population.dict[sire].last_birth = population.halfyear
+            elif sire in sim.siring_success.keys():
+                sim.siring_success[sire] += 1
+        if mother:
             population.dict[mother].offspring.append(newagent.index)
 
         return newagent

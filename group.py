@@ -28,4 +28,4 @@ class HamadryasGroup:
         self.index = index
         self.agents = []
         self.clans = []
-        self.leadermales = []
+        self.leadermales = set()
