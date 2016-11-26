@@ -12,7 +12,11 @@ class SerialRunner(Runner):
         self.n_replicates = n_replicates
 
     def run(self):
-        return [self.new_sim().run_simulation() for x in range(self.n_replicates)]
+        ret = []
+        for i in range(self.n_replicates):
+            print "running replicate " + str(i) + " of " + str(self.n_replicates)
+            ret.append(self.new_sim().run_simulation())
+        return ret
 
     def new_sim(self):
         constructor = globals()[self.class_name]

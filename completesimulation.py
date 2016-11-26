@@ -254,7 +254,7 @@ class HamadryasSim(Simulation):
             self.promotions(population)
 
             #  print "Population: " + str(len(population.dict.keys()))
-            print "Hamadryas half-year " + str(halfyear) + " done!"
+            # print "Hamadryas half-year " + str(halfyear) + " done!"
             if len(population.all) == 0:
                 break
 
@@ -339,7 +339,7 @@ class SavannahSim(Simulation):
 
             if len(population.all) == 0:
                 break
-            print "Savannah half-year " + str(halfyear) + " done!"
+                # print "Savannah half-year " + str(halfyear) + " done!"
             #  print "Population: " + str(len(population.all))
             #  print self.get_sex_age_ratios(population)
 
