@@ -16,6 +16,10 @@ class Formatter():
             for n_offspring in self.data[i]["sires"].keys():
                 row[n_offspring + 4] = self.data[i]["sires"][n_offspring]
 
+        headers = ["Rep", "Pop_Size", "Ad_Sex_Ratio", "Ad_Juv_Ratio"] + range(total_max)
+
+        matrix.insert(0, headers)
+
         return matrix
 
     def get_max(self):
