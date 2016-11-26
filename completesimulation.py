@@ -1,8 +1,6 @@
 import collections
 import random
 
-import numpy
-
 import aging
 import lifetables
 from agent import MakeAgents, MaleState, FemaleState
@@ -252,15 +250,16 @@ class HamadryasSim(Simulation):
                     HamadryasDispersal.opportun_takeover(female, population, self)
                 population.avail_females = []
 
-            print self.birth_check(population, halfyear)
+            self.birth_check(population, halfyear)
             self.promotions(population)
 
-            print "Population: " + str(len(population.dict.keys()))
+            #  print "Population: " + str(len(population.dict.keys()))
             print "Hamadryas half-year " + str(halfyear) + " done!"
             if len(population.all) == 0:
                 break
 
         ratios = self.get_sex_age_ratios(population)
+        self.siring_success = collections.Counter(self.siring_success.values())
 
         return {"sires": self.siring_success,
                 "pop size": len(population.all),
@@ -335,17 +334,18 @@ class SavannahSim(Simulation):
                 group = population.groupsdict[group]
                 self.dominance_calc(population, group)
 
-            print self.birth_check(population, halfyear)
+            self.birth_check(population, halfyear)
             self.promotions(population)
 
             if len(population.all) == 0:
                 break
             print "Savannah half-year " + str(halfyear) + " done!"
-            print "Population: " + str(len(population.all))
-            print self.get_sex_age_ratios(population)
+            #  print "Population: " + str(len(population.all))
+            #  print self.get_sex_age_ratios(population)
 
-        print "Interbirth Interval: " + str(numpy.mean(self.interbirth_int))
+        #  print "Interbirth Interval: " + str(numpy.mean(self.interbirth_int))
         ratios = self.get_sex_age_ratios(population)
+        self.siring_success = collections.Counter(self.siring_success.values())
 
         return {"sires": self.siring_success,
                 "pop size": len(population.all),
@@ -378,40 +378,3 @@ class SavannahSim(Simulation):
                 alpha.alpha_tenure = 0.5
 
 
-def main():
-    savannah_offspring = {}
-    hamadryas_offspring = {}
-
-    savannah_pop_sizes = []
-    savannah_sex_ratios = []
-    savannah_age_ratios = []
-    hamadryas_pop_sizes = []
-    hamadryas_sex_ratios = []
-    hamadryas_age_ratios = []
-
-    for i in range(0, 1000):
-        sav_sim = SavannahSim()
-        sav_output = sav_sim.run_simulation()
-        hama_sim = HamadryasSim()
-        hama_output = hama_sim.run_simulation()
-
-        savannah_offspring[i] = (sav_output["sires"])
-        hamadryas_offspring[i] = (hama_output["sires"])
-
-        savannah_pop_sizes.append(sav_output["pop_size"])
-        savannah_sex_ratios.append(sav_output["adult sex ratio"])
-        savannah_age_ratios.append(sav_output["adult to nonadult ratio"])
-
-        hamadryas_pop_sizes.append(hama_output["pop_size"])
-        hamadryas_sex_ratios.append(sav_output["adult sex ratio"])
-        hamadryas_age_ratios.append(sav_output["adult to nonadult ratio"])
-
-    print "Savannah population sizes: " + str(savannah_pop_sizes)
-    print "Hamadryas population sizes: " + str(hamadryas_pop_sizes)
-
-    with open('hama_vs_sav_compar.csv', 'w') as csvfile:
-        pass
-
-
-if __name__ == '__main__':
-    main()
