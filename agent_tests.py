@@ -123,7 +123,7 @@ class LifeTableTests(unittest.TestCase):
         print "death count: " + str(deathcounter)
 
         #  self.assertAlmostEqual(deathcounter, 250)
-        self.assertAlmostEqual(len(fakepop.all), 750, delta=75)
+        self.assertAlmostEqual(len(fakepop.all), 650, delta=100)
 
     def test_birth_stuff(self):
         fakesim = SavannahSim()

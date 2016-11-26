@@ -122,7 +122,7 @@ class ChallengeTests(unittest.TestCase):
         print became_leader, followed, died
         self.assertAlmostEqual(followed, 2250, delta=450)
         self.assertAlmostEqual(became_leader, 1250, delta=250)
-        self.assertAlmostEqual(50, died, delta=50)
+        self.assertAlmostEqual(75, died, delta=50)
 
     def test_fol_choices(self):
         fol_sim = HamadryasSim()
