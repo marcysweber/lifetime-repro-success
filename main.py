@@ -1,10 +1,10 @@
-from run import SerialRunner
+from run import SerialRunner, ParallelRunner
 from formatter import Formatter
 from saver import Saver
 
 
 def run(simulation_name, file_name):
-    runner = SerialRunner(simulation_name, 400, 1000)
+    runner = ParallelRunner(simulation_name, 400, 1000, 4)
     output = runner.run()
 
     formatter = Formatter(output)
@@ -15,7 +15,7 @@ def run(simulation_name, file_name):
 
 
 def main():
-    run("HamadryasSim", "hama_out.csv")
+    #  run("HamadryasSim", "hama_out.csv")
     run("SavannahSim", "sav_out.csv")
 
 

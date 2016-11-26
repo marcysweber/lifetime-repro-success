@@ -57,7 +57,7 @@ class Simulation(object):
                 getdeathchance = lifetables.getdeathchance(agent)
 
                 if agent.taxon == "savannah":
-                    getdeathchance *= 1.42
+                    getdeathchance *= 1.41
                 elif agent.taxon == "hamadryas":
                     getdeathchance *= 1.25
 
