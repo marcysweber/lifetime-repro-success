@@ -1,3 +1,5 @@
+from completesimulation import SavannahSim, HamadryasSim
+
 class Runner:
     def run(self, class_name, duration, n_replicates):
         pass
