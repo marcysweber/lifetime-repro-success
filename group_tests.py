@@ -148,8 +148,9 @@ class DispersalTests(unittest.TestCase):
 
 
 class SavannahFullRun(unittest.TestCase):
-    def full_run(self):
+    def test_full_run(self):
         sav_sim = SavannahSim()
+        sav_sim.duration = 50
         output = sav_sim.run_simulation()
 
         print output

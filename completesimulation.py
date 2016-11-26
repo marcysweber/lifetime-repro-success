@@ -57,6 +57,12 @@ class Simulation(object):
             if agentindex in population.dict.keys():
                 agent = population.dict[agentindex]
                 getdeathchance = lifetables.getdeathchance(agent)
+
+                if agent.taxon == "savannah":
+                    getdeathchance *= 1.42
+                elif agent.taxon == "hamadryas":
+                    getdeathchance *= 1.25
+
                 dieroll = random.uniform(0, 1)
                 if getdeathchance >= dieroll:
                     if agent.taxon == "savannah":
@@ -128,7 +134,7 @@ class Simulation(object):
             if agent.parents:
                 if agent.parents[0] in population.dict.keys():
                     population.dict[agent.parents[0]].femaleState = FemaleState.cycling
-        if agent.sex == 'm':
+        if agent.sex == 'm' and agent.age > 6.0:
             if halfyear > 40:
                 self.siring_success[agent.index] = (len(agent.offspring))
 
@@ -214,6 +220,7 @@ in hamadryas baboons and male dispersal in savannah.
 class HamadryasSim(Simulation):
     #  loop with unique functions when needed
     def __init__(self):
+        self.duration = 400
         super(HamadryasSim, self).__init__()
 
     def run_simulation(self):
@@ -222,7 +229,7 @@ class HamadryasSim(Simulation):
         for groupindex in range(0, 10):
             population = HamadryasSeed.makeseed(groupindex, population, self)
 
-        for halfyear in range(0, 400):
+        for halfyear in range(0, self.duration):
             population.halfyear = halfyear
             for group in population.groupsdict.values():
                 group.leadermales = set()
@@ -248,6 +255,7 @@ class HamadryasSim(Simulation):
             print self.birth_check(population, halfyear)
             self.promotions(population)
 
+            print "Population: " + str(len(population.dict.keys()))
             print "Hamadryas half-year " + str(halfyear) + " done!"
             if len(population.all) == 0:
                 break
@@ -306,6 +314,7 @@ class GeladaSim(Simulation):
 class SavannahSim(Simulation):
     #  loop with unique functions when needed
     def __init__(self):
+        self.duration = 400
         super(SavannahSim, self).__init__()
 
     def run_simulation(self):
@@ -315,7 +324,7 @@ class SavannahSim(Simulation):
         for groupindex in range(0, 10):
             population = SavannahSeed.makeseed(groupindex, population, self)
 
-        for halfyear in range(0, 400, 1):
+        for halfyear in range(0, self.duration, 1):
             population.halfyear = halfyear
 
             self.mortality_check(population, halfyear)

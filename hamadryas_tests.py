@@ -8,8 +8,9 @@ from seedgroups import HamadryasSeed
 
 
 class FullRunTests(unittest.TestCase):
-    def run(self):
+    def test_run(self):
         hamadryas_sim = HamadryasSim()
+        hamadryas_sim.duration = 50
         output = hamadryas_sim.run_simulation()
 
         print output
