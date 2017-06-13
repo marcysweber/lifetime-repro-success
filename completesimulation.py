@@ -4,18 +4,18 @@ import random
 import aging
 import lifetables
 from agent import MakeAgents, MaleState, FemaleState
-from dispersal import SavannahDispersal, HamadryasDispersal
-from paternity import SavannahPaternity
-from seedgroups import SavannahSeed, HamadryasSeed
+from dispersal import SavannahDispersal, HamadryasDispersal, GeladaDispersal
+from paternity import SavannahPaternity, GeladaPaternity
+from seedgroups import SavannahSeed, HamadryasSeed, GeladaSeed
 
 
 def main():
     hamadryas = HamadryasSim()
-    # gelada = GeladaSim()
+    gelada = GeladaSim()
     savannah = SavannahSim()
 
     hamadryas.run_simulation()
-    # gelada.run_simulation()
+    gelada.run_simulation()
     savannah.run_simulation()
 
 
@@ -39,6 +39,12 @@ class HamaPopulation(Population):
 class SavPopulation(Population):
     def __init__(self):
         super(SavPopulation, self).__init__()
+
+
+class GelPopulation(Population):
+    def __init__(self):
+        self.bachelor_males = []
+        super(GelPopulation, self).__init__()
 
 
 class Simulation(object):
@@ -146,24 +152,21 @@ class Simulation(object):
 
     def birthagent(self, mother, population, halfyear):
         sex = random.choice(['m', 'f'])
+        sire = mother.sire_of_fetus
 
-        if mother.taxon == "hamadryas":
+        if mother.taxon == "hamadryas" or mother.taxon == "gelada":
             group = mother.bandID
-            sire = mother.sire_of_fetus
-
-            infant = MakeAgents.makenewhamadryas(group, sex, mother.index,
-                                                 sire,
-                                                 population, self)
-            infant.OMUID = mother.OMUID
-            infant.clanID = mother.clanID
-
         elif mother.taxon == "savannah":
             group = mother.troopID
-            sire = mother.sire_of_fetus
 
-            infant = MakeAgents.makenewsavannah(group, sex, mother.index,
-                                                sire,
-                                                population, self)
+        infant = MakeAgents.makenewagent(mother.taxon, sex, mother.index,
+                                         sire,
+                                         population, sim=self, group=group)
+
+        if mother.taxon == "hamadryas" or mother.taxon == "gelada":
+            infant.OMUID = mother.OMUID
+            if mother.taxon == "hamadryas":
+                infant.clanID = mother.clanID
 
         mother.sire_of_fetus = None
         if not mother.last_birth:
@@ -307,8 +310,19 @@ class HamadryasSim(Simulation):
 
 class GeladaSim(Simulation):
     #  loop with unique functions when needed
+    def __init__(self):
+        self.duration = 400
+        super(GeladaSim, self).__init__()
+
     def run_simulation(self):
-        pass
+        population = GelPopulation()
+        for groupindex in range(0, 10):
+            population = GeladaSeed.makeseed(groupindex, population, self)
+
+        for halfyear in range(0, self.duration, 1):
+            population.halfyear = halfyear
+
+
 
 class SavannahSim(Simulation):
     #  loop with unique functions when needed

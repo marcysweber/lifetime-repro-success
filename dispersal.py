@@ -233,3 +233,61 @@ class SavannahDispersal:
                     male.dispersed = True
         else:
             sim.killagent(male, pop, pop.groupsdict[male.troopID], pop.halfyear)
+
+
+class GeladaDispersal:
+    @staticmethod
+    def bachelor_actions():
+        #  follow or challenge or disperse between bands
+        pass
+
+    @staticmethod
+    def follower_actions():
+        #  challenge (not the OMU he's following), inherit, switch, leave
+
+        #  what is the leader's RHP relative to mine?
+        #  if it's too high, do I do nothing, or switch, or challenge another OMU?
+        pass
+
+    @staticmethod
+    def follow():
+        pass
+
+    def challenge(self, male, population):
+        band = population.groupsdict[population.dict[male].band]
+        omu_ranking = self.generate_attractiveness_ranking(male, band, population)
+        pass
+
+    @staticmethod
+    def disperse_between_bands():
+        pass
+
+    @staticmethod
+    def inherit():
+        pass
+
+    @staticmethod
+    def follower_switch_OMU():
+        pass
+
+    @staticmethod
+    def follower_become_bachelor():
+        pass
+
+    def generate_attractiveness_ranking(self, male, band, population):
+        attractiveness = {}
+        leaders = population.dict[band.leadermales]
+
+        for leader in leaders:
+            score = self.attractiveness_n_females(male, leader) * self.attractiveness_rhp(male, leader)
+            attractiveness[leader.index] = score
+
+        ranking = []
+        sorted(attractiveness, key=attractiveness.__getitem__())
+        return ranking
+
+    def attractiveness_n_females(self, challenger, leader):
+        pass
+
+    def attractiveness_rhp(self, challenger, leader):
+        pass

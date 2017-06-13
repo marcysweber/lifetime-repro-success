@@ -38,3 +38,20 @@ class SavannahPaternity:
                 break
 
         return sire
+
+
+class GeladaPaternity:
+    @staticmethod
+    def geladasire(mother, population, halfyear):
+        sire = None
+        if halfyear >= 40:
+            leader = population.dict[mother.OMUID]
+
+            p = random.uniform(0, 1)
+
+            if p >= 0.17 or not leader.malefols:
+                sire = leader.index
+            else:
+                sire = random.choice(leader.malefols)
+
+        return sire

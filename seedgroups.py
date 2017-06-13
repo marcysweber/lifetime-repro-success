@@ -1,7 +1,7 @@
 import random
 
 from agent import MaleState, MakeAgents, FemaleState
-from group import SavannahGroup, HamadryasGroup
+from group import SavannahGroup, HamadryasGroup, GeladaGroup
 
 
 class SavannahSeed:
@@ -36,7 +36,7 @@ class SavannahSeed:
 
     @staticmethod
     def addagenttoseed(groupindex, group, population, sex, mother, sire, age, sim):
-        newagent = MakeAgents.makenewsavannah(groupindex, sex, mother, sire, population, sim, age)
+        newagent = MakeAgents.makenewagent("savannah", sex, mother, sire, population, sim, groupindex, age)
         if newagent.sex == 'm' and newagent.age > 7:
             newagent.dispersed = True
         elif newagent.sex == 'f' and newagent.age >= 5:
@@ -125,7 +125,7 @@ class HamadryasSeed:
 
     @staticmethod
     def addagenttoseed(groupindex, group, population, sex, mother, sire, age, sim):
-        newagent = MakeAgents.makenewhamadryas(groupindex, sex, mother, sire, population, sim, age)
+        newagent = MakeAgents.makenewagent("hamadryas", sex, mother, sire, population, sim, groupindex, age)
 
         # assign adult females and all non-adults randomly to OMUs
         if newagent.sex == 'f' or newagent.age < 5.0:
@@ -147,3 +147,24 @@ class HamadryasSeed:
         population.all.append(newagent.index)
         population.dict[newagent.index] = newagent
         group.agents.append(newagent.index)
+
+
+class GeladaSeed():
+    @staticmethod
+    def makeseed(groupindex, population, sim):
+        group = GeladaGroup(groupindex)
+
+        #  make adult males
+        GeladaSeed.addagenttoseed(groupindex,
+                                  group, population, 'm', None, None,
+                                  (float(random.randrange(12.0, 40.0)) / 2.0), sim)
+
+        #  assign those males to be leaders, followers, AMB
+
+        #  create adult females
+
+        #  create non-adults (1:1 sex ratio)
+
+    @staticmethod
+    def addagenttoseed(groupindex, group, population, sex, mother, sire, age, sim):
+        newagent = MakeAgents.makenewagent("gelada", sex, mother, sire, population, sim, groupindex, age)

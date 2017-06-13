@@ -29,3 +29,10 @@ class HamadryasGroup:
         self.agents = []
         self.clans = []
         self.leadermales = set()
+
+
+class GeladaGroup:
+    def __init__(self, index):
+        self.index = index
+        self.agents = []
+        self.leadermales = set()
